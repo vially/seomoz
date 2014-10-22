@@ -23,8 +23,8 @@ func computeHmac(message string, secret string) string {
 
 // URLMetrics is the basic structure returned by the API
 type URLMetrics struct {
-	PageAuthority   float64 `json:"pda"`
-	DomainAuthority float64 `json:"upa"`
+	PageAuthority   float64 `json:"upa"`
+	DomainAuthority float64 `json:"pda"`
 	Links           float64 `json:"uid"`
 	URL             string  `json:"uu"`
 }
@@ -96,5 +96,22 @@ func (s *Client) GetURLMetrics(urls []string, cols int) (metrics []URLMetrics, e
 	} else {
 		err = json.Unmarshal(content, &metrics)
 	}
+
+	if err != nil {
+		return
+	}
+
+	for i, m := range metrics {
+		if m.URL == "" {
+			requestedURL, urlError := url.Parse(urls[i])
+			if urlError != nil {
+				m.URL = urls[i]
+			} else {
+				m.URL = fmt.Sprintf("%s%s", requestedURL.Host, requestedURL.RequestURI())
+			}
+			metrics[i] = m
+		}
+	}
+
 	return
 }
