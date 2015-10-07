@@ -39,20 +39,13 @@ func TestClientQueryParams(t *testing.T) {
 
 func TestClientGetRequest(t *testing.T) {
 	client := &Client{AccessID: "my_id", SecretKey: "my_secret"}
-	req, err := client.buildGetRequest("https://www.example.com", "hello=world")
-	assert.Nil(t, err)
+	req := client.buildGetRequest("https://www.example.com", "hello=world")
 	assert.Equal(t, req.URL.String(), "http://lsapi.seomoz.com/linkscape/url-metrics/https%3A%2F%2Fwww.example.com?hello=world")
-
-	defaultApiURL = "https://example.com/#%fg"
-	_, err = client.buildGetRequest("https://www.example.com/", "hello=world")
-	assert.NotNil(t, err)
-	defaultApiURL = "http://lsapi.seomoz.com/linkscape/url-metrics/"
 }
 
 func TestClientPostRequest(t *testing.T) {
 	client := &Client{AccessID: "my_id", SecretKey: "my_secret"}
-	req, err := client.buildPostRequest([]string{"https://www.example.com"}, "hello=world")
-	assert.Nil(t, err)
+	req := client.buildPostRequest([]string{"https://www.example.com"}, "hello=world")
 	assert.Equal(t, req.URL.String(), "http://lsapi.seomoz.com/linkscape/url-metrics/?hello=world")
 }
 

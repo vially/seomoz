@@ -43,33 +43,20 @@ func (s *Client) rawQuery(cols int) string {
 	return v.Encode()
 }
 
-func (s *Client) buildGetRequest(link string, params string) (*http.Request, error) {
-	apiURL, err := url.Parse(fmt.Sprintf("%s%s", defaultApiURL, url.QueryEscape(link)))
-	if err != nil {
-		return nil, err
-	}
+func (s *Client) buildGetRequest(link string, params string) *http.Request {
+	apiURL, _ := url.Parse(fmt.Sprintf("%s%s", defaultApiURL, url.QueryEscape(link)))
 	apiURL.RawQuery = params
-	return http.NewRequest("GET", apiURL.String(), nil)
+	req, _ := http.NewRequest("GET", apiURL.String(), nil)
+	return req
 }
 
-func (s *Client) buildPostRequest(urls []string, params string) (*http.Request, error) {
-	apiURL, err := url.Parse(defaultApiURL)
-	if err != nil {
-		return nil, err
-	}
+func (s *Client) buildPostRequest(urls []string, params string) *http.Request {
+	urlsJSON, _ := json.Marshal(urls)
+	apiURL, _ := url.Parse(defaultApiURL)
 	apiURL.RawQuery = params
-
-	urlsJSON, err := json.Marshal(urls)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", apiURL.String(), bytes.NewReader(urlsJSON))
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", apiURL.String(), bytes.NewReader(urlsJSON))
 	req.Header.Set("Content-Type", "application/json")
-	return req, nil
+	return req
 }
 
 func readAllBody(rc io.ReadCloser) ([]byte, error) {
@@ -121,12 +108,7 @@ func (s *Client) unmarshalBulkResponse(urls []string, resp *http.Response) (map[
 
 // GetURLMetrics fetches the metrics for the given urls
 func (s *Client) GetURLMetrics(link string, cols int) (*URLMetrics, error) {
-	req, err := s.buildGetRequest(link, s.rawQuery(cols))
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := DefaultHTTPHandler(req)
+	resp, err := DefaultHTTPHandler(s.buildGetRequest(link, s.rawQuery(cols)))
 	if err != nil {
 		return nil, err
 	}
@@ -135,12 +117,7 @@ func (s *Client) GetURLMetrics(link string, cols int) (*URLMetrics, error) {
 }
 
 func (s *Client) GetBulkURLMetrics(urls []string, cols int) (map[string]*URLMetrics, error) {
-	req, err := s.buildPostRequest(urls, s.rawQuery(cols))
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := DefaultHTTPHandler(req)
+	resp, err := DefaultHTTPHandler(s.buildPostRequest(urls, s.rawQuery(cols)))
 	if err != nil {
 		return nil, err
 	}
