@@ -15,6 +15,7 @@ import (
 )
 
 var defaultApiURL = "http://lsapi.seomoz.com/linkscape/url-metrics/"
+var DefaultHTTPHandler = http.DefaultClient.Do
 
 // Client is the main object used to interact with the SeoMoz API
 type Client struct {
@@ -125,7 +126,7 @@ func (s *Client) GetURLMetrics(link string, cols int) (*URLMetrics, error) {
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := DefaultHTTPHandler(req)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +140,7 @@ func (s *Client) GetBulkURLMetrics(urls []string, cols int) (map[string]*URLMetr
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := DefaultHTTPHandler(req)
 	if err != nil {
 		return nil, err
 	}
