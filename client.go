@@ -16,6 +16,14 @@ var DefaultHTTPHandler = http.DefaultClient.Do
 var defaultApiURL = "http://lsapi.seomoz.com/linkscape/url-metrics/"
 var defaultBodyHandler = readAllCloser
 
+// URLMetrics is the basic structure returned by the API
+type URLMetrics struct {
+	PageAuthority   float64 `json:"upa"`
+	DomainAuthority float64 `json:"pda"`
+	Links           float64 `json:"uid"`
+	URL             string  `json:"uu"`
+}
+
 // Client is the main object used to interact with the SeoMoz API
 type Client struct {
 	AccessID  string
