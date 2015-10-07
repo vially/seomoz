@@ -2,18 +2,25 @@ package seomoz
 
 import (
 	"bytes"
+	"errors"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
-"errors"
 )
 
 func mockHTTPHandler(body string, err error) func(*http.Request) (*http.Response, error) {
 	return func(*http.Request) (*http.Response, error) {
 		return &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte(body)))}, err
+	}
+}
+
+func mockBodyHandler(out []byte, err error) func(io.ReadCloser) ([]byte, error) {
+	return func(io.ReadCloser) ([]byte, error) {
+		return out, err
 	}
 }
 
@@ -60,6 +67,11 @@ func TestClientUnmarshalSingleResponse(t *testing.T) {
 	assert.Equal(t, m.PageAuthority, float64(21))
 	assert.Equal(t, m.Links, float64(5))
 	assert.Equal(t, m.URL, "https://example.com")
+
+	defaultBodyHandler = mockBodyHandler(nil, errors.New("testing error"))
+	_, err = client.unmarshalSingleResponse(resp)
+	assert.NotNil(t, err)
+	defaultBodyHandler = readAllCloser
 }
 
 func TestClientUnmarshalBulkResponse(t *testing.T) {
@@ -93,6 +105,11 @@ func TestClientUnmarshalBulkResponse(t *testing.T) {
 	resp = &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte(``)))}
 	_, err = client.unmarshalBulkResponse([]string{link}, resp)
 	assert.NotNil(t, err)
+
+	defaultBodyHandler = mockBodyHandler(nil, errors.New("testing error"))
+	_, err = client.unmarshalBulkResponse([]string{link}, resp)
+	assert.NotNil(t, err)
+	defaultBodyHandler = readAllCloser
 }
 
 func TestClientGetSingleMetrics(t *testing.T) {

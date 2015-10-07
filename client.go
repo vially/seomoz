@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,8 +12,9 @@ import (
 	"time"
 )
 
-var defaultApiURL = "http://lsapi.seomoz.com/linkscape/url-metrics/"
 var DefaultHTTPHandler = http.DefaultClient.Do
+var defaultApiURL = "http://lsapi.seomoz.com/linkscape/url-metrics/"
+var defaultBodyHandler = readAllCloser
 
 // Client is the main object used to interact with the SeoMoz API
 type Client struct {
@@ -59,14 +58,8 @@ func (s *Client) buildPostRequest(urls []string, params string) *http.Request {
 	return req
 }
 
-func readAllBody(rc io.ReadCloser) ([]byte, error) {
-	content, err := ioutil.ReadAll(rc)
-	defer rc.Close()
-	return content, err
-}
-
 func (s *Client) unmarshalSingleResponse(resp *http.Response) (*URLMetrics, error) {
-	content, err := readAllBody(resp.Body)
+	content, err := defaultBodyHandler(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +70,7 @@ func (s *Client) unmarshalSingleResponse(resp *http.Response) (*URLMetrics, erro
 }
 
 func (s *Client) unmarshalBulkResponse(urls []string, resp *http.Response) (map[string]*URLMetrics, error) {
-	content, err := readAllBody(resp.Body)
+	content, err := defaultBodyHandler(resp.Body)
 	if err != nil {
 		return nil, err
 	}
