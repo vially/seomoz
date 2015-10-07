@@ -6,12 +6,22 @@ SEOmoz golang client
 # Usage
 
 ```go
-seomoz := seomoz.NewEnvClient()
-metrics, err := seomoz.GetURLMetrics(queryURL, cols)
-if err != nil {
-    log.Fatalln(err)
+package main
+
+import (
+	"fmt"
+	"github.com/vially/seomoz"
+	"log"
+)
+
+func main() {
+    seomoz := seomoz.NewEnvClient()
+    metrics, err := seomoz.GetURLMetrics(queryURL, cols)
+    if err != nil {
+        log.Fatalln(err)
+    }
+    fmt.Printf("Page Authority: %.0f\n", metrics.PageAuthority)
 }
-fmt.Printf("URL: %s\nLinks: %.0f\nPage Authority: %.0f\nDomain Authority: %.0f\n", metrics.URL, metrics.Links, metrics.PageAuthority, metrics.DomainAuthority)
 ```
 
 # Command Line Tool
