@@ -15,8 +15,8 @@ import (
 )
 
 func main() {
-    seomoz := seomoz.NewEnvClient()
-    metrics, err := seomoz.GetURLMetrics(queryURL, seomoz.DefaultCols)
+    client := seomoz.NewEnvClient()
+    metrics, err := client.GetURLMetrics(queryURL, seomoz.DefaultCols)
     if err != nil {
         log.Fatalln(err)
     }
