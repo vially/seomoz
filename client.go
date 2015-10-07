@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -12,6 +13,8 @@ import (
 	"strconv"
 	"time"
 )
+
+var defaultApiURL = "http://lsapi.seomoz.com/linkscape/url-metrics/"
 
 // Client is the main object used to interact with the SeoMoz API
 type Client struct {
@@ -39,52 +42,60 @@ func (s *Client) rawQuery(cols int) string {
 	return v.Encode()
 }
 
-func (s *Client) buildRequest(urls []string, cols int) (*http.Request, error) {
-	urlsCount := len(urls)
-	fullAPIURL := "http://lsapi.seomoz.com/linkscape/url-metrics/"
-	if urlsCount == 1 {
-		fullAPIURL = fmt.Sprintf("%s/%s", fullAPIURL, url.QueryEscape(urls[0]))
-	}
-
-	apiURL, err := url.Parse(fullAPIURL)
+func (s *Client) buildGetRequest(link string, params string) (*http.Request, error) {
+	apiURL, err := url.Parse(fmt.Sprintf("%s%s", defaultApiURL, url.QueryEscape(link)))
 	if err != nil {
 		return nil, err
 	}
-	apiURL.RawQuery = s.rawQuery(cols)
-
-	var req *http.Request
-	if urlsCount == 1 {
-		req, err = http.NewRequest("GET", apiURL.String(), nil)
-	} else {
-		urlsJSON, _ := json.Marshal(urls)
-		req, err = http.NewRequest("POST", apiURL.String(), bytes.NewReader(urlsJSON))
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Content-Type", "application/json")
-	}
-	return req, err
+	apiURL.RawQuery = params
+	return http.NewRequest("GET", apiURL.String(), nil)
 }
 
-func (s *Client) unmarshalResponse(urls []string, resp *http.Response) (map[string]*URLMetrics, error) {
-	content, err := ioutil.ReadAll(resp.Body)
+func (s *Client) buildPostRequest(urls []string, params string) (*http.Request, error) {
+	apiURL, err := url.Parse(defaultApiURL)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	apiURL.RawQuery = params
 
-	var metrics []*URLMetrics
-
-	urlsCount := len(urls)
-	if urlsCount == 1 {
-		metric := &URLMetrics{}
-		err = json.Unmarshal(content, &metric)
-		metrics = []*URLMetrics{metric}
-	} else {
-		err = json.Unmarshal(content, &metrics)
+	urlsJSON, err := json.Marshal(urls)
+	if err != nil {
+		return nil, err
 	}
 
+	req, err := http.NewRequest("POST", apiURL.String(), bytes.NewReader(urlsJSON))
 	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
+
+func readAllBody(rc io.ReadCloser) ([]byte, error) {
+	content, err := ioutil.ReadAll(rc)
+	defer rc.Close()
+	return content, err
+}
+
+func (s *Client) unmarshalSingleResponse(resp *http.Response) (*URLMetrics, error) {
+	content, err := readAllBody(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	metric := &URLMetrics{}
+	err = json.Unmarshal(content, &metric)
+	return metric, err
+}
+
+func (s *Client) unmarshalBulkResponse(urls []string, resp *http.Response) (map[string]*URLMetrics, error) {
+	content, err := readAllBody(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var metrics []*URLMetrics
+	if err = json.Unmarshal(content, &metrics); err != nil {
 		return nil, err
 	}
 
@@ -108,8 +119,8 @@ func (s *Client) unmarshalResponse(urls []string, resp *http.Response) (map[stri
 }
 
 // GetURLMetrics fetches the metrics for the given urls
-func (s *Client) GetURLMetrics(urls []string, cols int) (map[string]*URLMetrics, error) {
-	req, err := s.buildRequest(urls, cols)
+func (s *Client) GetURLMetrics(link string, cols int) (*URLMetrics, error) {
+	req, err := s.buildGetRequest(link, s.rawQuery(cols))
 	if err != nil {
 		return nil, err
 	}
@@ -119,5 +130,19 @@ func (s *Client) GetURLMetrics(urls []string, cols int) (map[string]*URLMetrics,
 		return nil, err
 	}
 
-	return s.unmarshalResponse(urls, resp)
+	return s.unmarshalSingleResponse(resp)
+}
+
+func (s *Client) GetBulkURLMetrics(urls []string, cols int) (map[string]*URLMetrics, error) {
+	req, err := s.buildPostRequest(urls, s.rawQuery(cols))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.unmarshalBulkResponse(urls, resp)
 }
