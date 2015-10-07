@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+var DefaultCols = 103079217156
 var DefaultHTTPHandler = http.DefaultClient.Do
 var defaultApiURL = "http://lsapi.seomoz.com/linkscape/url-metrics/"
 var defaultBodyHandler = readAllCloser

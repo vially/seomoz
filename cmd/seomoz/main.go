@@ -15,7 +15,7 @@ func main() {
 	}
 
 	queryURL := os.Args[1]
-	cols := 103079217156
+	cols := seomoz.DefaultCols
 	if len(os.Args) > 2 {
 		if columns, err := strconv.Atoi(os.Args[2]); err != nil {
 			log.Fatalln("Invalid COLS value: " + os.Args[2])
