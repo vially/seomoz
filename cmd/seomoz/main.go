@@ -25,9 +25,9 @@ func main() {
 	}
 
 	seomoz := seomoz.NewEnvClient()
-	m, err := seomoz.GetURLMetrics(queryURL, cols)
+	metrics, err := seomoz.GetURLMetrics(queryURL, cols)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Printf("%s\t%.0f\t%.0f\t%.0f\n", m.URL, m.Links, m.PageAuthority, m.DomainAuthority)
+	fmt.Printf("URL: %s\nLinks: %.0f\nPage Authority: %.0f\nDomain Authority: %.0f\n", metrics.URL, metrics.Links, metrics.PageAuthority, metrics.DomainAuthority)
 }
