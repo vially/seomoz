@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/jawher/mow.cli"
-	"github.com/vially/seomoz"
 	"log"
 	"os"
+
+	"github.com/jawher/mow.cli"
+	"github.com/vially/seomoz"
 )
 
 func main() {
