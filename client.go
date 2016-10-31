@@ -1,9 +1,18 @@
 package seomoz
 
-import "os"
+import (
+	"math"
+	"os"
+	"sync"
+)
 
-var DefaultCols = 103079217156
-var defaultMaxBatchURLs = 10
+var (
+	// DefaultCols is the sum of the numeric values for columns: Page Authority, Domain Authority, Links and Canonical URL
+	// See https://moz.com/help/guides/moz-api/mozscape/api-reference/url-metrics for more info
+	DefaultCols = 103079217156
+
+	defaultMaxBatchURLs = 10
+)
 
 // URLMetrics is the basic structure returned by the API
 type URLMetrics struct {
@@ -13,14 +22,14 @@ type URLMetrics struct {
 	URL             string  `json:"uu"`
 }
 
-type mozApi interface {
+type mozAPI interface {
 	GetURLMetrics(link string, cols int) (*URLMetrics, error)
 	GetBatchURLMetrics(urls []string, cols int) (map[string]*URLMetrics, error)
 }
 
 // Client is the main object used to interact with the SeoMoz API
 type Client struct {
-	moz          mozApi
+	moz          mozAPI
 	MaxBatchURLs int
 }
 
@@ -51,24 +60,44 @@ func (s *Client) GetBulkURLMetrics(urls []string, cols int) (map[string]*URLMetr
 		maxBatchURLs = defaultMaxBatchURLs
 	}
 
-	results := map[string]*URLMetrics{}
+	batchesNo := int(math.Ceil(float64(len(urls)) / float64(maxBatchURLs)))
+	responses := make(chan batchResponse, batchesNo)
+
+	var wg sync.WaitGroup
 	for i := 0; i < len(urls); i += maxBatchURLs {
-		var batchUrls []string
+		var batchURLs []string
 		if i+maxBatchURLs >= len(urls) {
-			batchUrls = urls[i:]
+			batchURLs = urls[i:]
 		} else {
-			batchUrls = urls[i : i+maxBatchURLs]
+			batchURLs = urls[i : i+maxBatchURLs]
 		}
 
-		batch, err := s.moz.GetBatchURLMetrics(batchUrls, cols)
-		if err != nil {
-			return nil, err
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			batch, err := s.moz.GetBatchURLMetrics(batchURLs, cols)
+			responses <- batchResponse{batch, err}
+		}()
+	}
+
+	wg.Wait()
+	close(responses)
+
+	results := map[string]*URLMetrics{}
+	for resp := range responses {
+		if resp.err != nil {
+			return nil, resp.err
 		}
 
-		for link, metrics := range batch {
+		for link, metrics := range resp.batch {
 			results[link] = metrics
 		}
 	}
 
 	return results, nil
+}
+
+type batchResponse struct {
+	batch map[string]*URLMetrics
+	err   error
 }
