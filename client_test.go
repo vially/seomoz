@@ -8,16 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockMozApi struct {
+type mockMozAPI struct {
 	metrics map[string]*URLMetrics
 	err     error
 }
 
-func (m *mockMozApi) GetURLMetrics(link string, cols int) (*URLMetrics, error) {
+func (m *mockMozAPI) GetURLMetrics(link string, cols int) (*URLMetrics, error) {
 	return m.metrics[link], m.err
 }
 
-func (m *mockMozApi) GetBatchURLMetrics(urls []string, cols int) (map[string]*URLMetrics, error) {
+func (m *mockMozAPI) GetBatchURLMetrics(urls []string, cols int) (map[string]*URLMetrics, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -40,13 +40,13 @@ func TestEnvClient(t *testing.T) {
 
 func TestClientGetSingleMetrics(t *testing.T) {
 	expectedMetrics := &URLMetrics{DomainAuthority: 45, PageAuthority: 68, Links: 123, URL: "https://example.com"}
-	mockMoz := &mockMozApi{metrics: map[string]*URLMetrics{expectedMetrics.URL: expectedMetrics}}
+	mockMoz := &mockMozAPI{metrics: map[string]*URLMetrics{expectedMetrics.URL: expectedMetrics}}
 	client := &Client{moz: mockMoz}
 	m, err := client.GetURLMetrics("https://example.com", 0)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedMetrics, m)
 
-	client = &Client{moz: &mockMozApi{err: errors.New("mock error")}}
+	client = &Client{moz: &mockMozAPI{err: errors.New("mock error")}}
 	m, err = client.GetURLMetrics("https://example.com", 0)
 	assert.Nil(t, m)
 	assert.NotNil(t, err)
@@ -54,13 +54,13 @@ func TestClientGetSingleMetrics(t *testing.T) {
 
 func TestClientGetBatchMetrics(t *testing.T) {
 	expectedMetrics := &URLMetrics{DomainAuthority: 45, PageAuthority: 68, Links: 123, URL: "https://example.com"}
-	mockMoz := &mockMozApi{metrics: map[string]*URLMetrics{expectedMetrics.URL: expectedMetrics}}
+	mockMoz := &mockMozAPI{metrics: map[string]*URLMetrics{expectedMetrics.URL: expectedMetrics}}
 	client := &Client{moz: mockMoz}
 	m, err := client.GetBatchURLMetrics([]string{"https://example.com"}, 0)
 	assert.Nil(t, err)
 	assert.Equal(t, mockMoz.metrics, m)
 
-	client = &Client{moz: &mockMozApi{err: errors.New("mock error")}}
+	client = &Client{moz: &mockMozAPI{err: errors.New("mock error")}}
 	m, err = client.GetBatchURLMetrics([]string{"https://example.com"}, 0)
 	assert.Nil(t, m)
 	assert.NotNil(t, err)
@@ -73,13 +73,13 @@ func TestClientGetBulkMetrics(t *testing.T) {
 		"https://example.com/3": {DomainAuthority: 45, PageAuthority: 68, Links: 123, URL: "https://example.com/3"},
 		"https://example.com/4": {DomainAuthority: 45, PageAuthority: 68, Links: 123, URL: "https://example.com/4"},
 	}
-	mockMoz := &mockMozApi{metrics: expectedMetrics}
+	mockMoz := &mockMozAPI{metrics: expectedMetrics}
 	client := &Client{moz: mockMoz, MaxBatchURLs: 2}
 	m, err := client.GetBulkURLMetrics([]string{"https://example.com/1", "https://example.com/2", "https://example.com/3", "https://example.com/4"}, 0)
 	assert.Nil(t, err)
 	assert.Equal(t, mockMoz.metrics, m)
 
-	client = &Client{moz: &mockMozApi{err: errors.New("mock error")}, MaxBatchURLs: 0}
+	client = &Client{moz: &mockMozAPI{err: errors.New("mock error")}, MaxBatchURLs: 0}
 	m, err = client.GetBulkURLMetrics([]string{"https://example.com/1", "https://example.com/2", "https://example.com/3", "https://example.com/4"}, 0)
 	assert.Nil(t, m)
 	assert.NotNil(t, err)

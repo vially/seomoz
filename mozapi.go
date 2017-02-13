@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	defaultApiURL      = "http://lsapi.seomoz.com/linkscape/url-metrics/"
+	defaultAPIURL      = "http://lsapi.seomoz.com/linkscape/url-metrics/"
 	defaultBodyHandler = readAllCloser
+	// DefaultHTTPHandler is the default handler used by the client to make HTTP requests
 	DefaultHTTPHandler = http.DefaultClient.Do
 )
 
@@ -39,7 +40,7 @@ func (s *MOZ) rawQuery(cols int) string {
 }
 
 func (s *MOZ) buildGetRequest(link string, params string) *http.Request {
-	apiURL, _ := url.Parse(fmt.Sprintf("%s%s", defaultApiURL, url.QueryEscape(link)))
+	apiURL, _ := url.Parse(fmt.Sprintf("%s%s", defaultAPIURL, url.QueryEscape(link)))
 	apiURL.RawQuery = params
 	req, _ := http.NewRequest("GET", apiURL.String(), nil)
 	return req
@@ -47,7 +48,7 @@ func (s *MOZ) buildGetRequest(link string, params string) *http.Request {
 
 func (s *MOZ) buildPostRequest(urls []string, params string) *http.Request {
 	urlsJSON, _ := json.Marshal(urls)
-	apiURL, _ := url.Parse(defaultApiURL)
+	apiURL, _ := url.Parse(defaultAPIURL)
 	apiURL.RawQuery = params
 	req, _ := http.NewRequest("POST", apiURL.String(), bytes.NewReader(urlsJSON))
 	req.Header.Set("Content-Type", "application/json")
