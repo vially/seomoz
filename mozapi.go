@@ -14,8 +14,10 @@ import (
 var (
 	defaultAPIURL      = "http://lsapi.seomoz.com/linkscape/url-metrics/"
 	defaultBodyHandler = readAllCloser
-	// DefaultHTTPHandler is the default handler used by the client to make HTTP requests
+	// DefaultHTTPHandler the default handler used by the client to make HTTP requests
 	DefaultHTTPHandler = http.DefaultClient.Do
+	// ErrTooManyRequests the error returned when too many requests have been submitted in a short interval
+	ErrTooManyRequests = errors.New("Too many requests")
 )
 
 // MOZ is the low lever http client used to interact with SEOmoz API
@@ -56,6 +58,10 @@ func (s *MOZ) buildPostRequest(urls []string, params string) *http.Request {
 }
 
 func (s *MOZ) unmarshalSingleResponse(resp *http.Response) (*URLMetrics, error) {
+	if resp.StatusCode == 429 {
+		return nil, ErrTooManyRequests
+	}
+
 	content, err := defaultBodyHandler(resp.Body)
 	if err != nil {
 		return nil, err
@@ -67,6 +73,10 @@ func (s *MOZ) unmarshalSingleResponse(resp *http.Response) (*URLMetrics, error) 
 }
 
 func (s *MOZ) unmarshalBatchResponse(urls []string, resp *http.Response) (map[string]*URLMetrics, error) {
+	if resp.StatusCode == 429 {
+		return nil, ErrTooManyRequests
+	}
+
 	content, err := defaultBodyHandler(resp.Body)
 	if err != nil {
 		return nil, err
