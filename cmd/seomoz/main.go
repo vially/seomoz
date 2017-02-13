@@ -20,7 +20,13 @@ func main() {
 	)
 
 	app.Action = func() {
-		client := seomoz.NewEnvClient()
+		accessID := os.Getenv("SEOMOZ_ACCESS_ID")
+		secretKey := os.Getenv("SEOMOZ_SECRET_KEY")
+		if accessID == "" || secretKey == "" {
+			log.Fatalln("SEOmoz API credentials not configured")
+		}
+
+		client := seomoz.NewClient(accessID, secretKey)
 		response, err := client.GetBulkURLMetrics(*urls, *cols)
 		if err != nil {
 			log.Fatalln(err)
